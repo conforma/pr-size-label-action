@@ -1,17 +1,42 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
+/**
+ * Determines the size label based on total lines changed
+ * @param {number} size - Total lines changed (additions + deletions)
+ * @returns {string} Size label (XS, S, M, L, XL, or XXL)
+ */
+function getSizeLabel(size) {
+  if (size > 600) {
+    return 'XXL';
+  } else if (size > 240) {
+    return 'XL';
+  } else if (size > 120) {
+    return 'L';
+  } else if (size > 60) {
+    return 'M';
+  } else if (size > 35) {
+    return 'S';
+  }
+  return 'XS';
+}
+
 async function run() {
   try {
     const token = core.getInput('token');
     const octokit = github.getOctokit(token);
     
     const { owner, repo } = github.context.repo;
+
+    if (!github.context.payload.pull_request) {
+      core.setFailed('This action must be run on pull_request or pull_request_target events.');
+      return;
+    }
+
     const prNumber = github.context.payload.pull_request.number;
     
     console.log(`Processing PR #${prNumber} in ${owner}/${repo}`);
     
-    // Get PR details
     const { data: pr } = await octokit.rest.pulls.get({
       owner,
       repo,
@@ -24,23 +49,10 @@ async function run() {
     
     console.log(`PR size: ${additions} additions + ${deletions} deletions = ${size} total changes`);
     
-    // Determine size label
-    let sizeLabel = 'XS';
-    if (size > 600) {
-      sizeLabel = 'XXL';
-    } else if (size > 240) {
-      sizeLabel = 'XL';
-    } else if (size > 120) {
-      sizeLabel = 'L';
-    } else if (size > 60) {
-      sizeLabel = 'M';
-    } else if (size > 35) {
-      sizeLabel = 'S';
-    }
+    const sizeLabel = getSizeLabel(size);
     
     console.log(`Determined size label: ${sizeLabel}`);
     
-    // Get current labels
     const { data: currentLabels } = await octokit.rest.issues.listLabelsOnIssue({
       owner,
       repo,
@@ -49,7 +61,6 @@ async function run() {
     
     const newLabel = `size: ${sizeLabel}`;
     
-    // Check if the correct label already exists
     const hasCorrectLabel = currentLabels.some(label => label.name === newLabel);
     
     if (hasCorrectLabel) {
@@ -57,8 +68,7 @@ async function run() {
       return;
     }
     
-    // Remove existing size labels (only if we need to change)
-    const sizeLabels = currentLabels.filter(label => label.name.startsWith('size:'));
+    const sizeLabels = currentLabels.filter(label => label.name.startsWith('size: '));
     console.log(`Found ${sizeLabels.length} existing size labels to remove`);
     
     for (const label of sizeLabels) {
@@ -71,7 +81,6 @@ async function run() {
       });
     }
     
-    // Add new size label
     console.log(`Adding label: ${newLabel}`);
     
     await octokit.rest.issues.addLabels({
@@ -88,4 +97,4 @@ async function run() {
   }
 }
 
-run();
+module.exports = { getSizeLabel, run };

@@ -4,7 +4,7 @@
   "description": "GitHub Action to automatically label PRs based on size",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.js -o dist",
+    "build": "ncc build src/main.js -o dist",
     "test": "jest"
   },
   "keywords": ["github", "action", "pr", "label", "size"],
