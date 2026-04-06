@@ -58499,7 +58499,7 @@ async function run() {
       return;
     }
     
-    const sizeLabels = currentLabels.filter(label => label.name.startsWith('size:'));
+    const sizeLabels = currentLabels.filter(label => label.name.startsWith('size: '));
     console.log(`Found ${sizeLabels.length} existing size labels to remove`);
     
     for (const label of sizeLabels) {
