@@ -58458,6 +58458,12 @@ async function run() {
     const octokit = github.getOctokit(token);
     
     const { owner, repo } = github.context.repo;
+
+    if (!github.context.payload.pull_request) {
+      core.setFailed('This action must be run on pull_request or pull_request_target events.');
+      return;
+    }
+
     const prNumber = github.context.payload.pull_request.number;
     
     console.log(`Processing PR #${prNumber} in ${owner}/${repo}`);
