@@ -31,7 +31,6 @@ async function run() {
     
     console.log(`Processing PR #${prNumber} in ${owner}/${repo}`);
     
-    // Get PR details
     const { data: pr } = await octokit.rest.pulls.get({
       owner,
       repo,
@@ -44,12 +43,10 @@ async function run() {
     
     console.log(`PR size: ${additions} additions + ${deletions} deletions = ${size} total changes`);
     
-    // Determine size label
     const sizeLabel = getSizeLabel(size);
     
     console.log(`Determined size label: ${sizeLabel}`);
     
-    // Get current labels
     const { data: currentLabels } = await octokit.rest.issues.listLabelsOnIssue({
       owner,
       repo,
@@ -58,7 +55,6 @@ async function run() {
     
     const newLabel = `size: ${sizeLabel}`;
     
-    // Check if the correct label already exists
     const hasCorrectLabel = currentLabels.some(label => label.name === newLabel);
     
     if (hasCorrectLabel) {
@@ -66,7 +62,6 @@ async function run() {
       return;
     }
     
-    // Remove existing size labels (only if we need to change)
     const sizeLabels = currentLabels.filter(label => label.name.startsWith('size:'));
     console.log(`Found ${sizeLabels.length} existing size labels to remove`);
     
@@ -80,7 +75,6 @@ async function run() {
       });
     }
     
-    // Add new size label
     console.log(`Adding label: ${newLabel}`);
     
     await octokit.rest.issues.addLabels({
@@ -98,7 +92,3 @@ async function run() {
 }
 
 module.exports = { getSizeLabel, run };
-
-if (require.main === module) {
-  run();
-}
