@@ -1,4 +1,9 @@
-const { getSizeLabel } = require('./index');
+jest.mock('@actions/core');
+jest.mock('@actions/github');
+
+const core = require('@actions/core');
+const github = require('@actions/github');
+const { getSizeLabel, run } = require('./index');
 
 describe('getSizeLabel', () => {
   describe('XS size (0-35 lines)', () => {
@@ -85,13 +90,6 @@ describe('getSizeLabel', () => {
     });
   });
 });
-
-jest.mock('@actions/core');
-jest.mock('@actions/github');
-
-const core = require('@actions/core');
-const github = require('@actions/github');
-const { run } = require('./index');
 
 describe('run()', () => {
   const mockOctokit = {
