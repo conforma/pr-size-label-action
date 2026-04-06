@@ -85,3 +85,83 @@ describe('getSizeLabel', () => {
     });
   });
 });
+
+jest.mock('@actions/core');
+jest.mock('@actions/github');
+
+const core = require('@actions/core');
+const github = require('@actions/github');
+const { run } = require('./index');
+
+describe('run()', () => {
+  const mockOctokit = {
+    rest: {
+      pulls: { get: jest.fn() },
+      issues: {
+        listLabelsOnIssue: jest.fn(),
+        removeLabel: jest.fn(),
+        addLabels: jest.fn()
+      }
+    }
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    core.getInput.mockReturnValue('fake-token');
+    github.getOctokit.mockReturnValue(mockOctokit);
+    github.context = {
+      repo: { owner: 'org', repo: 'repo' },
+      payload: { pull_request: { number: 42 } }
+    };
+  });
+
+  test('adds correct size label when no labels exist', async () => {
+    mockOctokit.rest.pulls.get.mockResolvedValue({ data: { additions: 10, deletions: 5 } });
+    mockOctokit.rest.issues.listLabelsOnIssue.mockResolvedValue({ data: [] });
+    await run();
+    expect(mockOctokit.rest.issues.addLabels).toHaveBeenCalledWith(
+      expect.objectContaining({ labels: ['size: XS'] })
+    );
+  });
+
+  test('replaces existing size label when size changes', async () => {
+    mockOctokit.rest.pulls.get.mockResolvedValue({ data: { additions: 500, deletions: 200 } });
+    mockOctokit.rest.issues.listLabelsOnIssue.mockResolvedValue({
+      data: [{ name: 'size: XS' }, { name: 'bug' }]
+    });
+    await run();
+    expect(mockOctokit.rest.issues.removeLabel).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'size: XS' })
+    );
+    expect(mockOctokit.rest.issues.addLabels).toHaveBeenCalledWith(
+      expect.objectContaining({ labels: ['size: XXL'] })
+    );
+  });
+
+  test('skips update when correct label already present', async () => {
+    mockOctokit.rest.pulls.get.mockResolvedValue({ data: { additions: 10, deletions: 5 } });
+    mockOctokit.rest.issues.listLabelsOnIssue.mockResolvedValue({
+      data: [{ name: 'size: XS' }]
+    });
+    await run();
+    expect(mockOctokit.rest.issues.addLabels).not.toHaveBeenCalled();
+    expect(mockOctokit.rest.issues.removeLabel).not.toHaveBeenCalled();
+  });
+
+  test('fails gracefully on non-PR events', async () => {
+    github.context = {
+      repo: { owner: 'org', repo: 'repo' },
+      payload: {}
+    };
+    await run();
+    expect(core.setFailed).toHaveBeenCalledWith(
+      'This action must be run on pull_request or pull_request_target events.'
+    );
+  });
+
+  test('calls core.setFailed on API error', async () => {
+    mockOctokit.rest.pulls.get.mockRejectedValue(new Error('API error'));
+    await run();
+    expect(core.setFailed).toHaveBeenCalledWith('API error');
+  });
+});
