@@ -1,6 +1,26 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
+/**
+ * Determines the size label based on total lines changed
+ * @param {number} size - Total lines changed (additions + deletions)
+ * @returns {string} Size label (XS, S, M, L, XL, or XXL)
+ */
+function getSizeLabel(size) {
+  if (size > 600) {
+    return 'XXL';
+  } else if (size > 240) {
+    return 'XL';
+  } else if (size > 120) {
+    return 'L';
+  } else if (size > 60) {
+    return 'M';
+  } else if (size > 35) {
+    return 'S';
+  }
+  return 'XS';
+}
+
 async function run() {
   try {
     const token = core.getInput('token');
@@ -25,18 +45,7 @@ async function run() {
     console.log(`PR size: ${additions} additions + ${deletions} deletions = ${size} total changes`);
     
     // Determine size label
-    let sizeLabel = 'XS';
-    if (size > 600) {
-      sizeLabel = 'XXL';
-    } else if (size > 240) {
-      sizeLabel = 'XL';
-    } else if (size > 120) {
-      sizeLabel = 'L';
-    } else if (size > 60) {
-      sizeLabel = 'M';
-    } else if (size > 35) {
-      sizeLabel = 'S';
-    }
+    const sizeLabel = getSizeLabel(size);
     
     console.log(`Determined size label: ${sizeLabel}`);
     
@@ -88,4 +97,8 @@ async function run() {
   }
 }
 
-run();
+module.exports = { getSizeLabel, run };
+
+if (require.main === module) {
+  run();
+}
