@@ -18,7 +18,7 @@
     "@actions/github": "^6.0.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.0",
+    "@vercel/ncc": "^0.45.0",
     "jest": "^30.0.0"
   }
 }
