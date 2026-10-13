@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.repository == 'conforma/pr-size-label-action' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Validate version format
