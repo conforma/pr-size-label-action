@@ -1,11 +1,12 @@
 {
   "name": "pr-size-label",
   "version": "1.0.0",
+  "type": "module",
   "description": "GitHub Action to automatically label PRs based on size",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/main.js -o dist",
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "keywords": ["github", "action", "pr", "label", "size"],
   "author": "Conforma",
