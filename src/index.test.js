@@ -1,9 +1,20 @@
-jest.mock('@actions/core');
-jest.mock('@actions/github');
+import { jest } from '@jest/globals';
 
-const core = require('@actions/core');
-const github = require('@actions/github');
-const { getSizeLabel, run } = require('./index');
+jest.unstable_mockModule('@actions/core', () => ({
+  getInput: jest.fn(),
+  setFailed: jest.fn()
+}));
+jest.unstable_mockModule('@actions/github', () => ({
+  context: {
+    repo: {},
+    payload: {}
+  },
+  getOctokit: jest.fn()
+}));
+
+const core = await import('@actions/core');
+const github = await import('@actions/github');
+const { getSizeLabel, run } = await import('./index.js');
 
 describe('getSizeLabel', () => {
   describe('XS size (0-35 lines)', () => {
@@ -107,10 +118,10 @@ describe('run()', () => {
     jest.clearAllMocks();
     core.getInput.mockReturnValue('fake-token');
     github.getOctokit.mockReturnValue(mockOctokit);
-    github.context = {
+    Object.assign(github.context, {
       repo: { owner: 'org', repo: 'repo' },
       payload: { pull_request: { number: 42 } }
-    };
+    });
   });
 
   test('adds correct size label when no labels exist', async () => {
@@ -147,10 +158,10 @@ describe('run()', () => {
   });
 
   test('fails gracefully on non-PR events', async () => {
-    github.context = {
+    Object.assign(github.context, {
       repo: { owner: 'org', repo: 'repo' },
       payload: {}
-    };
+    });
     await run();
     expect(core.setFailed).toHaveBeenCalledWith(
       'This action must be run on pull_request or pull_request_target events.'
