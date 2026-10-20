@@ -1,2 +1,3 @@
-const { run } = require('./index');
+import { run } from './index.js';
+
 run();
